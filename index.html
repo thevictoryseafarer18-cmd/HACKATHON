@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sakhi · सखी · தோழி · సఖి</title>
+<style>
+:root{--ink:#0B3C49;--sun:#FFC233;--sky:#E3F1F0;--rose:#D6336C;--white:#fff}
+*{box-sizing:border-box;margin:0}
+body{font-family:"Noto Sans","Noto Sans Devanagari","Noto Sans Tamil","Noto Sans Telugu",system-ui,sans-serif;background:var(--sky);color:var(--ink);min-height:100vh;display:flex;justify-content:center}
+main{width:100%;max-width:520px;padding:20px 16px 32px;display:flex;flex-direction:column;gap:16px}
+h1{font-size:1.9rem;line-height:1.3}
+p.big{font-size:1.45rem;line-height:1.55;font-weight:600}
+button{font:inherit;color:inherit;border:0;cursor:pointer;border-radius:20px;min-height:76px;padding:12px 18px}
+button:focus-visible{outline:4px solid var(--rose);outline-offset:3px}
+.card{background:var(--white);box-shadow:0 3px 0 rgba(11,60,73,.25);font-size:1.6rem;font-weight:700;display:flex;align-items:center;gap:16px;text-align:left;width:100%}
+.card .ic{font-size:2.4rem}
+.card small{display:block;font-size:1rem;font-weight:500;opacity:.7}
+.mic{background:var(--rose);color:#fff;width:140px;height:140px;border-radius:50%;align-self:center;font-size:3.6rem;position:relative}
+.mic.on::after{content:"";position:absolute;inset:-14px;border-radius:50%;border:5px solid var(--rose);animation:p 1s infinite}
+@keyframes p{from{transform:scale(.9);opacity:1}to{transform:scale(1.2);opacity:0}}
+@media(prefers-reduced-motion:reduce){.mic.on::after{animation:none}}
+.row{display:flex;gap:12px}.row button{flex:1;font-size:1.4rem;font-weight:700}
+.go{background:var(--sun)}.soft{background:var(--white)}
+.step{background:var(--white);border-radius:24px;padding:22px;border-left:12px solid var(--sun)}
+.dots{display:flex;gap:8px;justify-content:center}.dots i{width:16px;height:16px;border-radius:50%;background:#b9d3d1}.dots i.on{background:var(--ink)}
+.tip{background:var(--ink);color:#fff;border-radius:20px;padding:16px;font-size:1.1rem;line-height:1.5}
+.status{text-align:center;font-size:1.2rem;min-height:1.6em;font-weight:600}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main id="app" aria-live="polite"></main>
+<script>
+// ---- All content lives here. To add a language or service, add an object. ----
+const L = {
+ hi:{name:"हिन्दी",speech:"hi-IN",hello:"नमस्ते! मैं सखी हूँ।",
+  ask:"आप क्या करना चाहती हैं? बोलने के लिए लाल माइक दबाइए, या नीचे चुनिए।",
+  listening:"सुन रही हूँ…",unknown:"समझ नहीं आया। नीचे चुनिए।",next:"आगे",back:"पीछे",again:"🔊 फिर सुनिए",
+  done:"आपका काम हो गया। शाबाश!",home:"शुरू में जाइए",
+  tip:"अगर समझ न आए तो आंगनवाड़ी या आशा दीदी से पूछिए।",
+  kw:{bank:["बैंक","खाता","जन धन","पैसे","bank","khata"],health:["इलाज","आयुष्मान","अस्पताल","स्वास्थ्य","दवा","hospital","ayushman"]},
+  svc:{bank:{t:"बैंक खाता",s:"जन धन खाता, मुफ़्त",steps:[
+   "आपको अपना आधार कार्ड और मोबाइल फ़ोन चाहिए।",
+   "पास के बैंक या बैंक मित्र के पास जाइए। कहिए: मुझे जन धन खाता खोलना है।",
+   "फ़ॉर्म भरने में बैंक वाले मदद करेंगे। खाते में पैसे रखना ज़रूरी नहीं है।",
+   "आपको पासबुक और रुपे कार्ड मिलेगा। यह आपका अपना खाता है।"]},
+  health:{t:"इलाज का कार्ड",s:"आयुष्मान कार्ड, मुफ़्त इलाज",steps:[
+   "आपको आधार कार्ड और राशन कार्ड चाहिए।",
+   "पास के सरकारी अस्पताल में आयुष्मान मित्र के पास जाइए।",
+   "कहिए: मेरा आयुष्मान कार्ड बनवाना है। वे जाँच करके कार्ड बनाएँगे।",
+   "इस कार्ड से परिवार का हर साल पाँच लाख रुपये तक का इलाज मुफ़्त है। मदद के लिए फ़ोन करें: एक चार पाँच पाँच पाँच।"]}}},
+ ta:{name:"தமிழ்",speech:"ta-IN",hello:"வணக்கம்! நான் தோழி.",
+  ask:"உங்களுக்கு என்ன வேண்டும்? பேச சிவப்பு மைக்கை அழுத்துங்கள், அல்லது கீழே தேர்ந்தெடுங்கள்.",
+  listening:"கேட்கிறேன்…",unknown:"புரியவில்லை. கீழே தேர்ந்தெடுங்கள்.",next:"அடுத்து",back:"பின்",again:"🔊 மீண்டும் கேளுங்கள்",
+  done:"உங்கள் வேலை முடிந்தது. வாழ்த்துகள்!",home:"தொடக்கத்திற்கு",
+  tip:"புரியவில்லை என்றால் அங்கன்வாடி அல்லது ஆஷா அக்காவிடம் கேளுங்கள்.",
+  kw:{bank:["வங்கி","கணக்கு","பணம்","bank"],health:["மருத்துவ","ஆயுஷ்மான்","மருத்துவமனை","சிகிச்சை","hospital"]},
+  svc:{bank:{t:"வங்கிக் கணக்கு",s:"ஜன் தன் கணக்கு, இலவசம்",steps:[
+   "உங்களுக்கு ஆதார் அட்டையும் கைப்பேசியும் வேண்டும்.",
+   "அருகிலுள்ள வங்கி அல்லது வங்கி மித்ராவிடம் செல்லுங்கள். சொல்லுங்கள்: எனக்கு ஜன் தன் கணக்கு தொடங்க வேண்டும்.",
+   "படிவம் நிரப்ப வங்கி ஊழியர்கள் உதவுவார்கள். கணக்கில் பணம் போட வேண்டியதில்லை.",
+   "உங்களுக்கு பாஸ்புக்கும் ரூபே அட்டையும் கிடைக்கும். இது உங்கள் சொந்த கணக்கு."]},
+  health:{t:"மருத்துவ அட்டை",s:"ஆயுஷ்மான் அட்டை, இலவச சிகிச்சை",steps:[
+   "ஆதார் அட்டையும் குடும்ப அட்டையும் வேண்டும்.",
+   "அருகிலுள்ள அரசு மருத்துவமனையில் ஆயுஷ்மான் மித்ராவிடம் செல்லுங்கள்.",
+   "சொல்லுங்கள்: எனக்கு ஆயுஷ்மான் அட்டை வேண்டும். அவர்கள் சரிபார்த்து அட்டை தருவார்கள்.",
+   "இந்த அட்டையால் குடும்பத்திற்கு ஆண்டுக்கு ஐந்து லட்சம் ரூபாய் வரை இலவச சிகிச்சை. உதவிக்கு அழைக்கவும்: ஒன்று நான்கு ஐந்து ஐந்து ஐந்து."]}}},
+ te:{name:"తెలుగు",speech:"te-IN",hello:"నమస్తే! నేను సఖి.",
+  ask:"మీకు ఏమి కావాలి? మాట్లాడటానికి ఎరుపు మైక్ నొక్కండి, లేదా కింద ఎంచుకోండి.",
+  listening:"వింటున్నాను…",unknown:"అర్థం కాలేదు. కింద ఎంచుకోండి.",next:"తరువాత",back:"వెనుకకు",again:"🔊 మళ్ళీ వినండి",
+  done:"మీ పని అయింది. అభినందనలు!",home:"మొదటికి",
+  tip:"అర్థం కాకపోతే అంగన్‌వాడీ లేదా ఆశా అక్కను అడగండి.",
+  kw:{bank:["బ్యాంకు","బ్యాంక్","ఖాతా","డబ్బు","bank"],health:["చికిత్స","ఆయుష్మాన్","ఆరోగ్య","ఆసుపత్రి","hospital"]},
+  svc:{bank:{t:"బ్యాంకు ఖాతా",s:"జన్ ధన్ ఖాతా, ఉచితం",steps:[
+   "మీకు ఆధార్ కార్డు, మొబైల్ ఫోన్ కావాలి.",
+   "దగ్గరలోని బ్యాంకుకు లేదా బ్యాంక్ మిత్ర దగ్గరకు వెళ్ళండి. చెప్పండి: నాకు జన్ ధన్ ఖాతా తెరవాలి.",
+   "ఫారం నింపడానికి బ్యాంకు సిబ్బంది సహాయం చేస్తారు. ఖాతాలో డబ్బు ఉంచాల్సిన అవసరం లేదు.",
+   "మీకు పాస్‌బుక్, రూపే కార్డు వస్తాయి. ఇది మీ సొంత ఖాతా."]},
+  health:{t:"ఆరోగ్య కార్డు",s:"ఆయుష్మాన్ కార్డు, ఉచిత చికిత్స",steps:[
+   "మీకు ఆధార్ కార్డు, రేషన్ కార్డు కావాలి.",
+   "దగ్గరలోని ప్రభుత్వ ఆసుపత్రిలో ఆయుష్మాన్ మిత్ర దగ్గరకు వెళ్ళండి.",
+   "చెప్పండి: నాకు ఆయుష్మాన్ కార్డు కావాలి. వారు చూసి కార్డు ఇస్తారు.",
+   "ఈ కార్డుతో కుటుంబానికి ఏటా ఐదు లక్షల రూపాయల వరకు ఉచిత చికిత్స. సహాయానికి ఫోన్ చేయండి: ఒకటి నాలుగు ఐదు ఐదు ఐదు."]}}},
+ en:{name:"English",speech:"en-IN",hello:"Hello! I am Sakhi.",
+  ask:"What do you need? Press the red mic and speak, or choose below.",
+  listening:"Listening…",unknown:"I did not understand. Please choose below.",next:"Next",back:"Back",again:"🔊 Listen again",
+  done:"You are done. Well done!",home:"Start again",
+  tip:"If anything is unclear, ask your Anganwadi or ASHA didi.",
+  kw:{bank:["bank","account","money","jan dhan"],health:["health","hospital","ayushman","treatment","medicine"]},
+  svc:{bank:{t:"Bank account",s:"Jan Dhan account, free",steps:[
+   "You need your Aadhaar card and a mobile phone.",
+   "Go to a nearby bank or Bank Mitra. Say: I want to open a Jan Dhan account.",
+   "The bank staff will help you fill the form. You do not need to put any money in.",
+   "You will get a passbook and a RuPay card. It is your own account."]},
+  health:{t:"Health card",s:"Ayushman card, free treatment",steps:[
+   "You need your Aadhaar card and ration card.",
+   "Go to the nearest government hospital and find the Ayushman Mitra desk.",
+   "Say: I want an Ayushman card. They will check and make it for you.",
+   "This card gives your family free treatment up to five lakh rupees a year. For help call 14555."]}}}
+};
+const ICON={bank:"🏦",health:"🏥"};
+const app=document.getElementById("app");
+let lang=null,svc=null,i=0;
+const synth=window.speechSynthesis;
+function say(text,code){ if(!synth)return; synth.cancel(); const u=new SpeechSynthesisUtterance(text); u.lang=code; u.rate=.85; synth.speak(u); }
+const el=(h)=>{app.innerHTML=h};
+
+function pickLang(){
+  svc=null;lang=null;
+  el(`<h1>सखी · தோழி · సఖి</h1>
+  <p class="big">🔊 👇</p>
+  ${Object.keys(L).map(k=>`<button class="card" data-l="${k}"><span class="ic">🔊</span>${L[k].name}</button>`).join("")}`);
+  app.querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>{lang=b.dataset.l;home(true)});
+}
+function home(greet){
+  const t=L[lang];svc=null;
+  el(`<p class="big">${t.ask}</p>
+  <button class="mic" id="mic" aria-label="Speak">🎤</button>
+  <div class="status" id="st"></div>
+  ${Object.keys(t.svc).map(k=>`<button class="card" data-s="${k}"><span class="ic">${ICON[k]}</span><span>${t.svc[k].t}<small>${t.svc[k].s}</small></span></button>`).join("")}
+  <button class="soft" id="re">${t.again}</button>`);
+  say((greet?t.hello+" ":"")+t.ask,t.speech);
+  app.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{svc=b.dataset.s;i=0;show()});
+  document.getElementById("re").onclick=()=>say(t.ask,t.speech);
+  document.getElementById("mic").onclick=listen;
+}
+function listen(){
+  const t=L[lang],st=document.getElementById("st"),mic=document.getElementById("mic");
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){st.textContent=t.unknown;say(t.unknown,t.speech);return}
+  synth&&synth.cancel();
+  const r=new SR();r.lang=t.speech;r.interimResults=false;
+  mic.classList.add("on");st.textContent=t.listening;
+  r.onresult=e=>{
+    const said=e.results[0][0].transcript.toLowerCase();
+    // understand her words in ANY supported language, not just the chosen one
+    const hit=Object.keys(t.svc).find(k=>Object.values(L).some(l=>l.kw[k].some(w=>said.includes(w.toLowerCase()))));
+    if(hit){svc=hit;i=0;show()}else{st.textContent=t.unknown;say(t.unknown,t.speech)}
+  };
+  r.onerror=()=>{st.textContent=t.unknown;say(t.unknown,t.speech)};
+  r.onend=()=>mic.classList.remove("on");
+  r.start();
+}
+function show(){
+  const t=L[lang],s=t.svc[svc],n=s.steps.length,last=i===n-1;
+  el(`<p class="big">${s.t}</p>
+  <div class="dots">${s.steps.map((_,j)=>`<i class="${j<=i?"on":""}"></i>`).join("")}</div>
+  <div class="step"><p class="big">${s.steps[i]}</p></div>
+  <button class="soft" id="re">${t.again}</button>
+  <div class="row"><button class="soft" id="bk">◀ ${t.back}</button>
+  <button class="go" id="nx">${last?"✔":t.next+" ▶"}</button></div>
+  ${last?`<div class="tip">${t.done}<br>${t.tip}</div>`:""}`);
+  say(s.steps[i]+(last?" "+t.done+" "+t.tip:""),t.speech);
+  document.getElementById("re").onclick=()=>say(s.steps[i],t.speech);
+  document.getElementById("bk").onclick=()=>{i>0?(i--,show()):home()};
+  document.getElementById("nx").onclick=()=>{last?pickLang():(i++,show())};
+}
+pickLang();
+</script>
+</body>
+</html>
